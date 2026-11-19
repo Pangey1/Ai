@@ -1,0 +1,60 @@
+# Mini AI Studio — User Guide
+
+**Mini AI Studio** is a lightweight, offline desktop AI assistant built with C++17 and the Win32 API. All user profiles, chat histories, and AI knowledge bases are stored locally and encrypted in binary `.dat` files.
+
+\---
+
+## Key Features
+
+* **Local Multi-User Profiles:** Create multiple accounts without an email or internet connection, or launch a temporary **Guest** session that automatically deletes itself upon exit.
+* **Animated Avatars:** Supports static images (`.png`, `.jpg`, `.bmp`, `.ico`, `.tiff`) as well as animated `.gif` avatars.
+* **Custom AI Training (`Ai.dat`):** Train the built-in AI using your own text or import pre-trained `Ai.dat` knowledge files.
+* **Built-in Math Engine:** Automatically detects and solves arithmetic expressions (`+`, `-`, `\*`, `/`, and parentheses) directly in the chat.
+* **Encrypted Chat Management:** Create multiple chat threads with custom descriptions, export/import encrypted `.dat` chat files, and manage them locally.
+* **Bilingual Interface:** Automatically adapts to English or Russian based on your Windows system language.
+
+\---
+
+## Getting Started
+
+### 1\. Creating or Selecting an Account
+
+* **First Launch:** Enter any username on the welcome screen and click **Create Account**.
+* **Multiple Accounts:** If two or more accounts exist, a selection window will appear on startup. You can sign in to an existing profile, create a new one, or start a **Temporary Profile (Guest)**.
+
+### 2\. Chatting with the AI
+
+* Type your message in the bottom input bar and press **Enter** or click **Send**.
+* **Math Calculations:** Type any math expression (e.g., `(125 + 75) \* 4 / 2`) to get an instant calculation.
+* **Managing Chats:**
+
+  * Click **+ New Chat** to start a fresh conversation with an optional title and description.
+  * Select any chat from the left sidebar to switch between conversations.
+  * Press the **Delete** key while a chat is selected in the sidebar to permanently remove it.
+  * Click **Import Chat (.dat)** to decrypt and load a shared or backed-up chat file into your profile.
+
+### 3\. Training the AI (`Ai.dat`)
+
+The AI generates responses by matching word stems against sentences stored in your profile's `Ai.dat` file.
+
+1. Click **Train AI** in the top-left corner.
+2. Type or paste any text into the editor (use `Ctrl + A` to select all).
+
+   * *Tip:* If you write a question ending with `?` on one line, the AI will use the **next sentence** as its reply.
+3. Alternatively, click **Load Ai.dat...** to import an existing encrypted knowledge base.
+4. Click **Save to Ai.dat** to encrypt and apply the new knowledge.
+
+### 4\. Editing Your Profile
+
+Click **Profile** in the top-right corner to:
+
+* Change your **username** or **bio description**.
+* Upload a static image or animated **GIF avatar** (automatically resized to 512×512) or remove your current photo.
+* Switch accounts or permanently **Delete Profile** along with all associated chats.
+
+\---
+
+## Data Storage \& Building
+
+* **Storage Location:** All encrypted user data is saved under `C:\\ProgramData\\MiniAI\_Studio\\Users\\<Username>\\` (accessible anytime via the **Data Folder** button).
+* **Requirements to Compile:** Windows OS, MSVC (Visual Studio) with **C++17** enabled, linking `Gdiplus.lib`, `Comdlg32.lib`, and `Shell32.lib`.
