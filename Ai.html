@@ -1,0 +1,1228 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mini AI Studio 10.0 — Web & Cookies</title>
+<style>
+  :root {
+    --bg: #ffffff;
+    --header-bg: #f0f0f0;
+    --panel-bg: #f8f9fa;
+    --edit-bg: #ffffff;
+    --text: #141414;
+    --muted: #666666;
+    --border: #cccccc;
+    --btn-bg: #e1e1e1;
+    --btn-hover: #d5d5d5;
+    --accent: #0066cc;
+    --accent-text: #ffffff;
+  }
+
+  body.theme-dark {
+    --bg: #1e1e22;
+    --header-bg: #28282e;
+    --panel-bg: #25252b;
+    --edit-bg: #2a2a30;
+    --text: #ebebef;
+    --muted: #9ca3af;
+    --border: #3f3f46;
+    --btn-bg: #36363e;
+    --btn-hover: #44444e;
+    --accent: #2563eb;
+    --accent-text: #ffffff;
+  }
+
+  * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, sans-serif; }
+  body {
+    margin: 0;
+    background-color: var(--bg);
+    color: var(--text);
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    user-select: none;
+  }
+
+  button, input, textarea, select {
+    font-size: 14px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    background-color: var(--edit-bg);
+    color: var(--text);
+    outline: none;
+  }
+
+  button { background-color: var(--btn-bg); cursor: pointer; padding: 6px 12px; }
+  button:hover:not(:disabled) { background-color: var(--btn-hover); }
+  button:disabled { opacity: 0.45; cursor: not-allowed; }
+  button.primary { background-color: var(--accent); color: var(--accent-text); border-color: var(--accent); font-weight: 600; }
+  button.danger { background-color: #dc2626; color: #fff; border-color: #dc2626; }
+
+  header {
+    height: 60px;
+    background-color: var(--header-bg);
+    border-bottom: 1px solid var(--border);
+    padding: 0 12px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+  }
+  .header-right { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+  .user-badge { text-align: right; line-height: 1.2; }
+  .user-badge .uname { font-weight: 600; font-size: 15px; }
+  .user-badge .uemail { font-size: 11px; color: var(--muted); }
+  .avatar-mini { width: 44px; height: 44px; border-radius: 4px; overflow: hidden; background: #d2d2d2; flex-shrink: 0; }
+  .avatar-mini img, .avatar-mini svg { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+  .workspace { display: flex; flex: 1; overflow: hidden; padding: 10px; gap: 10px; }
+  .sidebar { width: 210px; display: flex; flex-direction: column; gap: 6px; flex-shrink: 0; }
+  .chat-list { flex: 1; border: 1px solid var(--border); background-color: var(--edit-bg); overflow-y: auto; border-radius: 4px; }
+  .chat-item { padding: 8px 10px; cursor: pointer; border-bottom: 1px solid rgba(128,128,128,0.12); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 14px; }
+  .chat-item:hover { background-color: rgba(128,128,128,0.15); }
+  .chat-item.active { background-color: var(--accent); color: #ffffff; font-weight: 600; }
+
+  .chat-container { flex: 1; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+  .chat-history { flex: 1; border: 1px solid var(--border); background-color: var(--edit-bg); padding: 12px; overflow-y: auto; white-space: pre-wrap; word-wrap: break-word; font-family: Consolas, monospace; font-size: 14px; line-height: 1.45; user-select: text; border-radius: 4px; }
+  .input-bar { height: 38px; display: flex; gap: 6px; }
+  .input-bar input { flex: 1; padding: 0 10px; font-size: 15px; }
+
+  .context-menu { position: fixed; background-color: var(--panel-bg); border: 1px solid var(--border); box-shadow: 0 4px 12px rgba(0,0,0,0.25); border-radius: 4px; z-index: 9999; min-width: 170px; padding: 4px 0; }
+  .context-menu div { padding: 7px 14px; cursor: pointer; font-size: 14px; }
+  .context-menu div:hover { background-color: var(--accent); color: #fff; }
+
+  .modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.55); display: flex; align-items: center; justify-content: center; z-index: 1000; }
+  .modal-window { background-color: var(--panel-bg); border: 1px solid var(--border); border-radius: 6px; box-shadow: 0 10px 30px rgba(0,0,0,0.4); width: 440px; max-width: 95vw; overflow: hidden; }
+  .modal-titlebar { background-color: var(--header-bg); padding: 10px 14px; font-weight: 600; border-bottom: 1px solid var(--border); }
+  .modal-body { padding: 16px; display: flex; flex-direction: column; gap: 10px; }
+  .modal-footer { padding: 10px 16px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 8px; }
+  .row { display: flex; gap: 8px; align-items: center; }
+  .hidden { display: none !important; }
+  .cookie-badge { font-size: 11px; background: rgba(0, 102, 204, 0.15); color: var(--accent); padding: 3px 8px; border-radius: 10px; font-weight: 600; }
+</style>
+</head>
+<body>
+
+<header id="appHeader" class="hidden">
+  <button id="btnTrain" onclick="openTrainModal()">Обучить ИИ</button>
+  <button id="btnExport" onclick="exportAccountBackup()">Экспорт (.json)</button>
+  <button id="btnImport" onclick="document.getElementById('importFile').click()">Импорт (.json)</button>
+  <input type="file" id="importFile" accept=".json" class="hidden" onchange="importAccountBackup(this.files)">
+  <button id="btnSettings" onclick="openSettingsModal()">Настройки</button>
+  <span class="cookie-badge" title="Сессия и тема сохраняются в Cookies и хранилище">Cookies Active</span>
+
+  <div class="header-right">
+    <div class="user-badge">
+      <div class="uname" id="headerUserName">Сергей</div>
+      <div class="uemail" id="headerUserEmail">user@mail.ru</div>
+    </div>
+    <button id="btnProfile" onclick="openProfileModal()">Профиль</button>
+    <div class="avatar-mini" id="headerAvatarBox"></div>
+  </div>
+</header>
+
+<div id="appWorkspace" class="workspace hidden">
+  <div class="sidebar">
+    <button id="btnNewChat" onclick="openNewChatModal()">+ Новый чат</button>
+    <div class="chat-list" id="chatListBox"></div>
+  </div>
+
+  <div class="chat-container">
+    <div class="chat-history" id="chatHistoryBox"></div>
+    <div class="input-bar">
+      <input type="text" id="msgInput" placeholder="Напишите сообщение, 'clear', 'помощь' или вставьте скрин (Ctrl+V)..." onkeydown="handleMsgKeyDown(event)">
+      <input type="file" id="imgInput" accept="image/*" class="hidden" onchange="handleSelectedImage(this.files)">
+      <button id="btnAttach" onclick="document.getElementById('imgInput').click()">Фото</button>
+      <button id="btnSend" class="primary" onclick="sendMessage()">Отправить</button>
+    </div>
+  </div>
+</div>
+
+<div id="chatContextMenu" class="context-menu hidden">
+  <div id="ctxRename" onclick="contextRenameChat()">Переименовать чат</div>
+  <div id="ctxDelete" onclick="contextDeleteChat()">Удалить чат</div>
+</div>
+<div id="authModal" class="modal-backdrop">
+  <div class="modal-window">
+    <div class="modal-titlebar">
+      <span>Mini AI Studio 10.0 — Вход по Почте (Cookies)</span>
+    </div>
+    <div class="modal-body">
+      <div style="font-size:13px; color:var(--muted);">
+        Укажите <b>Email</b> для привязки данных и сохранения сессии в <b>Cookies</b> браузера:
+      </div>
+      <input type="email" id="authEmail" placeholder="Почта (например: sergey@mail.ru)">
+      <input type="text" id="authName" placeholder="Ваше имя (для нового аккаунта)">
+      <input type="password" id="authPass" placeholder="Пароль (необязательно)">
+
+      <button id="btnForgotPass" class="primary hidden" style="background:#0066cc; width:100%;" onclick="resetAndShowPassword()">
+        Сбросить и показать пароль
+      </button>
+
+      <div id="savedAccountsBlock" class="hidden" style="margin-top:6px;">
+        <div style="font-size:12px; color:var(--muted); margin-bottom:4px;">Сохранённые аккаунты (по почте):</div>
+        <select id="savedAccountsSelect" style="width:100%; padding:5px;" onchange="fillEmailFromSelect()"></select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button onclick="loginAsGuest()">Гость (Временный)</button>
+      <button class="primary" onclick="submitEmailAuth()">Войти / Создать</button>
+    </div>
+  </div>
+</div>
+
+<div id="settingsModal" class="modal-backdrop hidden">
+  <div class="modal-window" style="width:380px;">
+    <div class="modal-titlebar"><span>Настройки</span></div>
+    <div class="modal-body">
+      <label style="font-size:13px; font-weight:600;">Язык интерфейса:</label>
+      <select id="setLangSelect" style="padding:6px;">
+        <option value="0">Русский</option>
+        <option value="1">English</option>
+        <option value="2">Deutsch</option>
+        <option value="3">Español</option>
+        <option value="4">Français</option>
+        <option value="5">Українська</option>
+        <option value="6">中文</option>
+        <option value="7">日本語</option>
+      </select>
+
+      <label style="font-size:13px; font-weight:600; margin-top:6px;">Тема оформления (Cookies):</label>
+      <label class="row"><input type="radio" name="themeRadio" value="0" id="radLight"> Белая (Классическая)</label>
+      <label class="row"><input type="radio" name="themeRadio" value="1" id="radDark"> Тёмная тема (Dark Mode)</label>
+      <div class="row">
+        <label class="row"><input type="radio" name="themeRadio" value="2" id="radCustom"> Свой цвет фона:</label>
+        <input type="color" id="setCustomColor" value="#e6f0ff" style="width:50px; height:28px; padding:0; border:none;">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="primary" onclick="applySettings()">OK</button>
+      <button onclick="closeModal('settingsModal')">Отмена</button>
+    </div>
+  </div>
+</div>
+
+<div id="profileModal" class="modal-backdrop hidden">
+  <div class="modal-window" style="width:490px;">
+    <div class="modal-titlebar"><span>Профиль пользователя</span></div>
+    <div class="modal-body">
+      <div class="row" style="align-items:flex-start; gap:14px;">
+        <div style="flex:1; display:flex; flex-direction:column; gap:8px;">
+          <label style="font-size:12px;">Имя:</label>
+          <input type="text" id="profNameInput">
+
+          <label style="font-size:12px;">Пароль (необязательно):</label>
+          <div class="row">
+            <input type="password" id="profPassInput" style="flex:1;" oninput="toggleProfResetBtn()">
+            <button id="btnProfResetPass" onclick="resetProfilePasswordWithWarning()">Сбросить</button>
+          </div>
+
+          <label style="font-size:12px;">Описание:</label>
+          <textarea id="profDescInput" rows="3"></textarea>
+        </div>
+
+        <div style="width:140px; display:flex; flex-direction:column; align-items:center; gap:8px;">
+          <div id="profAvatarPreview" style="width:120px; height:120px; border:1px solid var(--border); border-radius:4px; overflow:hidden; background:#d2d2d2;"></div>
+          <input type="file" id="profAvatarFile" accept="image/*" class="hidden" onchange="handleAvatarUpload(this.files)">
+          <button style="width:100%;" onclick="document.getElementById('profAvatarFile').click()">Фото / GIF...</button>
+          <button id="btnProfRemoveAvatar" style="width:100%;" onclick="removeProfileAvatar()">Удалить фото</button>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer" style="justify-content:space-between;">
+      <div class="row">
+        <button onclick="switchUserFromProfile()">Сменить почту</button>
+        <button class="danger" onclick="deleteCurrentAccount()">Удалить</button>
+      </div>
+      <div class="row">
+        <button class="primary" onclick="saveProfileChanges()">OK</button>
+        <button onclick="closeModal('profileModal')">Отмена</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="trainModal" class="modal-backdrop hidden">
+  <div class="modal-window" style="width:580px;">
+    <div class="modal-titlebar"><span>Редактор базы знаний Ai.dat (Строка 1 — вопрос, Строка 2 — ответ)</span></div>
+    <div class="modal-body">
+      <textarea id="trainTextArea" rows="14" style="font-family:Consolas, monospace;"></textarea>
+    </div>
+    <div class="modal-footer" style="justify-content:space-between;">
+      <div class="row">
+        <input type="file" id="loadTxtFile" accept=".txt,.dat" class="hidden" onchange="loadTxtOrDatIntoTrain(this.files)">
+        <button onclick="document.getElementById('loadTxtFile').click()">Загрузить Ai.dat / .txt...</button>
+        <button onclick="exportBrainToCppDat()">Скачать Ai.dat</button>
+      </div>
+      <div class="row">
+        <button class="primary" onclick="saveTrainingData()">Сохранить</button>
+        <button onclick="closeModal('trainModal')">Отмена</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="chatEditModal" class="modal-backdrop hidden">
+  <div class="modal-window" style="width:390px;">
+    <div class="modal-titlebar"><span id="chatEditModalTitle">Новый чат</span></div>
+    <div class="modal-body">
+      <label style="font-size:12px;">Название чата:</label>
+      <input type="text" id="chatTitleInput">
+      <label style="font-size:12px;">Описание (необязательно):</label>
+      <textarea id="chatDescInput" rows="3"></textarea>
+    </div>
+    <div class="modal-footer">
+      <button class="primary" onclick="confirmChatEditModal()">OK</button>
+      <button onclick="closeModal('chatEditModal')">Отмена</button>
+    </div>
+  </div>
+</div>
+
+<div id="findModal" class="modal-backdrop hidden">
+  <div class="modal-window" style="width:340px;">
+    <div class="modal-titlebar"><span>Поиск по чату (Ctrl + F)</span></div>
+    <div class="modal-body">
+      <input type="text" id="findQueryInput" placeholder="Введите текст для поиска..." onkeydown="if(event.key==='Enter') executeChatSearch()">
+      <div id="findResultInfo" style="font-size:12px; color:var(--muted);"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="primary" onclick="executeChatSearch()">Найти</button>
+      <button onclick="closeModal('findModal')">Закрыть</button>
+    </div>
+  </div>
+</div>
+<script>
+// ================= 1. COOKIES И ХРАНИЛИЩЕ НАСТРОЕК =================
+function setCookie(name, value, days) {
+  const d = new Date();
+  d.setTime(d.getTime() + ((days || 365) * 24 * 60 * 60 * 1000));
+  document.cookie = name + "=" + encodeURIComponent(value) + ";expires=" + d.toUTCString() + ";path=/;SameSite=Lax";
+}
+
+function getCookie(name) {
+  const prefix = name + "=";
+  const parts = document.cookie.split(";");
+  for (let i = 0; i < parts.length; i++) {
+    const item = parts.at(i).trim();
+    if (item.indexOf(prefix) === 0) return decodeURIComponent(item.substring(prefix.length));
+  }
+  return "";
+}
+
+function deleteCookie(name) {
+  document.cookie = name + "=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/;";
+}
+
+let g_langIndex = 0;
+let g_themeMode = 0;
+let g_customColor = "#e6f0ff";
+
+let g_currentEmail = "";
+let g_user = null;
+let g_currentChatIdx = 0;
+let g_contextChatIdx = -1;
+let g_chatEditMode = "create";
+let g_tempAvatarDataUrl = "";
+let g_pendingAuthEmail = "";
+
+const I18N = {
+  0: { train: "Обучить ИИ", exp: "Экспорт (.json)", imp: "Импорт (.json)", set: "Настройки", prof: "Профиль", newchat: "+ Новый чат", send: "Отправить", img: "Фото", ren: "Переименовать чат", del: "Удалить чат" },
+  1: { train: "Train AI", exp: "Export (.json)", imp: "Import (.json)", set: "Settings", prof: "Profile", newchat: "+ New Chat", send: "Send", img: "Image", ren: "Rename Chat", del: "Delete Chat" },
+  2: { train: "KI trainieren", exp: "Export (.json)", imp: "Import (.json)", set: "Einstellungen", prof: "Profil", newchat: "+ Neuer Chat", send: "Senden", img: "Bild", ren: "Umbenennen", del: "Löschen" },
+  3: { train: "Entrenar IA", exp: "Exportar (.json)", imp: "Importar (.json)", set: "Ajustes", prof: "Perfil", newchat: "+ Nuevo chat", send: "Enviar", img: "Imagen", ren: "Renombrar", del: "Eliminar" },
+  4: { train: "Entraîner IA", exp: "Exporter (.json)", imp: "Importer (.json)", set: "Paramètres", prof: "Profil", newchat: "+ Nouveau chat", send: "Envoyer", img: "Image", ren: "Renommer", del: "Supprimer" },
+  5: { train: "Навчити ШІ", exp: "Експорт (.json)", imp: "Імпорт (.json)", set: "Налаштування", prof: "Профіль", newchat: "+ Новий чат", send: "Надіслати", img: "Фото", ren: "Перейменувати", del: "Видалити" },
+  6: { train: "训练 AI", exp: "导出 (.json)", imp: "导入 (.json)", set: "设置", prof: "个人资料", newchat: "+ 新建聊天", send: "发送", img: "图片", ren: "重命名", del: "删除" },
+  7: { train: "AI 学習", exp: "出力 (.json)", imp: "読込 (.json)", set: "設定", prof: "プロフィール", newchat: "+ 新規チャット", send: "送信", img: "画像", ren: "名前変更", del: "削除" }
+};
+
+function T(key) {
+  const dict = I18N[g_langIndex] || I18N;
+  return dict[key] || I18N[key] || key;
+}
+
+const DEFAULT_WIN8_AVATAR_SVG =
+  '<svg viewBox="0 0 100 100" xmlns="http://w3.org">' +
+  '<rect width="100" height="100" fill="#d2d2d2"/>' +
+  '<circle cx="50" cy="36" r="18" fill="#8e8e8e"/>' +
+  '<path d="M14 96 C14 66, 86 66, 86 96 Z" fill="#8e8e8e"/>' +
+  '</svg>';
+
+function getStorageKey(email) {
+  return "MiniAI_Studio10_Acc_" + email.toLowerCase().trim();
+}
+
+function getAllSavedEmails() {
+  const emails = [];
+  for (let i = 0; i < localStorage.length; i++) {
+    const k = localStorage.key(i);
+    if (k && k.startsWith("MiniAI_Studio10_Acc_")) {
+      try {
+        const obj = JSON.parse(localStorage.getItem(k));
+        if (obj && obj.email && !obj.isGuest) emails.push(obj.email);
+      } catch (e) {}
+    }
+  }
+  return emails;
+}
+
+function saveCurrentUserToStorage() {
+  if (!g_currentEmail || !g_user || g_user.isGuest) return;
+  localStorage.setItem(getStorageKey(g_currentEmail), JSON.stringify(g_user));
+  localStorage.setItem("MiniAI_LastEmail", g_currentEmail);
+  setCookie("miniai_active_email", g_currentEmail, 365);
+}
+
+// ================= 2. ТЕМЫ ОФОРМЛЕНИЯ И ЯЗЫК =================
+function applyThemeAndLangToUI() {
+  document.body.classList.remove("theme-dark");
+  document.body.style.removeProperty("--bg");
+  document.body.style.removeProperty("--edit-bg");
+
+  if (g_themeMode === 1) {
+    document.body.classList.add("theme-dark");
+  } else if (g_themeMode === 2) {
+    document.body.style.setProperty("--bg", g_customColor);
+    document.body.style.setProperty("--edit-bg", "#fafcff");
+  }
+
+  document.getElementById("btnTrain").textContent = T("train");
+  document.getElementById("btnExport").textContent = T("exp");
+  document.getElementById("btnImport").textContent = T("imp");
+  document.getElementById("btnSettings").textContent = T("set");
+  document.getElementById("btnProfile").textContent = T("prof");
+  document.getElementById("btnNewChat").textContent = T("newchat");
+  document.getElementById("btnSend").textContent = T("send");
+  document.getElementById("btnAttach").textContent = T("img");
+  document.getElementById("ctxRename").textContent = T("ren");
+  document.getElementById("ctxDelete").textContent = T("del");
+}
+
+function openSettingsModal() {
+  document.getElementById("setLangSelect").value = String(g_langIndex);
+  document.getElementById("setCustomColor").value = g_customColor;
+  if (g_themeMode === 1) document.getElementById("radDark").checked = true;
+  else if (g_themeMode === 2) document.getElementById("radCustom").checked = true;
+  else document.getElementById("radLight").checked = true;
+  document.getElementById("settingsModal").classList.remove("hidden");
+}
+
+function applySettings() {
+  g_langIndex = parseInt(document.getElementById("setLangSelect").value, 10) || 0;
+  if (document.getElementById("radDark").checked) g_themeMode = 1;
+  else if (document.getElementById("radCustom").checked) g_themeMode = 2;
+  else g_themeMode = 0;
+  g_customColor = document.getElementById("setCustomColor").value;
+
+  setCookie("miniai_lang", String(g_langIndex), 365);
+  setCookie("miniai_theme", String(g_themeMode), 365);
+  setCookie("miniai_custom_color", g_customColor, 365);
+
+  localStorage.setItem("MiniAI_Settings", JSON.stringify({
+    lang: g_langIndex,
+    theme: g_themeMode,
+    color: g_customColor
+  }));
+
+  applyThemeAndLangToUI();
+  closeModal("settingsModal");
+}
+
+// ================= 3. АВТОРИЗАЦИЯ ПО ПОЧТЕ И СИНЯЯ КНОПКА СБРОСА ПАРОЛЯ =================
+function refreshSavedAccountsDropdown() {
+  const emails = getAllSavedEmails();
+  const block = document.getElementById("savedAccountsBlock");
+  const sel = document.getElementById("savedAccountsSelect");
+  if (emails.length === 0) {
+    block.classList.add("hidden");
+    return;
+  }
+  block.classList.remove("hidden");
+  sel.innerHTML = '<option value="">-- Выберите почту (' + emails.length + ') --</option>';
+  emails.forEach(function(em) {
+    const opt = document.createElement("option");
+    opt.value = em;
+    opt.textContent = em;
+    sel.appendChild(opt);
+  });
+}
+
+function fillEmailFromSelect() {
+  const val = document.getElementById("savedAccountsSelect").value;
+  if (val) {
+    document.getElementById("authEmail").value = val;
+    document.getElementById("btnForgotPass").classList.add("hidden");
+  }
+}
+
+function submitEmailAuth() {
+  const email = document.getElementById("authEmail").value.trim();
+  const nameInput = document.getElementById("authName").value.trim();
+  const passInput = document.getElementById("authPass").value;
+
+  if (!email || email.indexOf("@") === -1) {
+    alert("Введите корректный адрес почты (Email)!");
+    return;
+  }
+
+  const raw = localStorage.getItem(getStorageKey(email));
+  if (raw) {
+    const loaded = JSON.parse(raw);
+    if (loaded.password && loaded.password !== passInput) {
+      g_pendingAuthEmail = email;
+      alert("Wrong password!");
+      document.getElementById("btnForgotPass").classList.remove("hidden");
+      return;
+    }
+    completeLogin(loaded);
+  } else {
+    const defaultName = nameInput || email.split("@").at(0);
+    const newUser = {
+      email: email,
+      username: defaultName,
+      password: passInput,
+      description: "",
+      avatarDataUrl: "",
+      isGuest: false,
+      knowledge: [
+        "Привет",
+        "Привет! Чем могу помочь?",
+        "Кто ты",
+        "Я Mini AI Studio 10.0 Web Edition, привязанный к твоей почте и совместимый с C++ файлами Ai.dat!"
+      ],
+      chats: [
+        {
+          id: "chat_1",
+          title: "Основной диалог",
+          description: "",
+          messages: [
+            {
+              isUser: false,
+              text: "Добро пожаловать! Все данные привязаны к почте " + email + " и сохраняются через Cookies и хранилище.",
+              imageFile: "",
+              timestamp: getCurrentTimestampStr()
+            }
+          ]
+        }
+      ]
+    };
+    completeLogin(newUser);
+  }
+}
+
+function resetAndShowPassword() {
+  if (!g_pendingAuthEmail) return;
+  const raw = localStorage.getItem(getStorageKey(g_pendingAuthEmail));
+  if (!raw) return;
+  const loaded = JSON.parse(raw);
+  alert("Ваш пароль от аккаунта (" + g_pendingAuthEmail + "): " + loaded.password + "\nПароль успешно сброшен!");
+  loaded.password = "";
+  localStorage.setItem(getStorageKey(g_pendingAuthEmail), JSON.stringify(loaded));
+  document.getElementById("btnForgotPass").classList.add("hidden");
+  completeLogin(loaded);
+}
+
+function loginAsGuest() {
+  const guestUser = {
+    email: "guest@local.session",
+    username: "TempGuest",
+    password: "",
+    description: "Временный гостевой профиль",
+    avatarDataUrl: "",
+    isGuest: true,
+    knowledge: ["Привет", "Привет! Вы вошли как временный гость."],
+    chats: [
+      {
+        id: "chat_guest",
+        title: "Гостевой чат",
+        description: "",
+        messages: [
+          {
+            isUser: false,
+            text: "Гостевой сеанс активен (данные не сохраняются в Cookies).",
+            imageFile: "",
+            timestamp: getCurrentTimestampStr()
+          }
+        ]
+      }
+    ]
+  };
+  completeLogin(guestUser);
+}
+
+function completeLogin(userObj) {
+  g_user = userObj;
+  g_currentEmail = userObj.email;
+  g_currentChatIdx = 0;
+
+if (!g_user.isGuest) {
+saveCurrentUserToStorage();
+}
+document.getElementById("authModal").classList.add("hidden");
+document.getElementById("appHeader").classList.remove("hidden");
+document.getElementById("appWorkspace").classList.remove("hidden");
+updateHeaderProfileUI();
+refreshChatUI();
+}
+function updateHeaderProfileUI() {
+  document.getElementById("headerUserName").textContent = g_user.username;
+  document.getElementById("headerUserEmail").textContent = g_user.email;
+  const box = document.getElementById("headerAvatarBox");
+  if (g_user.avatarDataUrl) {
+    box.innerHTML = "";
+    const imgEl = document.createElement("img");
+    imgEl.src = g_user.avatarDataUrl;
+    imgEl.alt = "avatar";
+    imgEl.style.width = "100%";
+    imgEl.style.height = "100%";
+    imgEl.style.objectFit = "cover";
+    imgEl.style.display = "block";
+    box.appendChild(imgEl);
+  } else {
+    box.innerHTML = DEFAULT_WIN8_AVATAR_SVG;
+  }
+}
+
+// ================= 4. РАСШИФРОВКА И ЗАШИФРОВКА C++ ФАЙЛОВ Ai.dat =================
+function cryptCppBuffer(uint8Arr) {
+const key = [0x6B, 0xB6, 0x2D, 0xD2, 0x8F, 0xF8, 0x4A, 0xA4];
+for (let i = 0; i < uint8Arr.length; i++) {
+const kByte = key.at(i % 8);
+const val = uint8Arr.at(i) ^ ((kByte + ((i * 7) & 0xFF)) & 0xFF);
+uint8Arr.set([val], i);
+}
+}
+function parseCppAiDat(arrayBuffer) {
+const bytes = new Uint8Array(arrayBuffer);
+cryptCppBuffer(bytes);
+const view = new DataView(bytes.buffer);
+const decoder = new TextDecoder("utf-16le");
+let offset = 0;
+if (bytes.length < 8) return null;
+const magic = view.getUint32(offset, true); offset += 4;
+if (magic !== 0x41494441) return null; // "AIDA"
+const sentCount = view.getUint32(offset, true); offset += 4;
+const sentences = [];
+for (let i = 0; i < sentCount; i++) {
+if (offset + 4 > bytes.length) break;
+const strLen = view.getUint32(offset, true); offset += 4;
+const byteLen = strLen * 2;
+if (offset + byteLen > bytes.length) break;
+const strBytes = bytes.slice(offset, offset + byteLen);
+sentences.push(decoder.decode(strBytes));
+offset += byteLen;
+}
+return sentences;
+}
+function loadTxtOrDatIntoTrain(files) {
+if (!files || files.length === 0) return;
+const file = files.item(0);
+if (file.name.toLowerCase().endsWith(".dat")) {
+const reader = new FileReader();
+reader.onload = function(e) {
+const parsed = parseCppAiDat(e.target.result);
+if (parsed) {
+document.getElementById("trainTextArea").value = parsed.join("\n");
+alert("Файл Ai.dat успешно расшифрован! Загружено строк: " + parsed.length);
+} else {
+alert("Ошибка: файл не является корректным зашифрованным Ai.dat!");
+}
+};
+reader.readAsArrayBuffer(file);
+} else {
+const reader = new FileReader();
+reader.onload = function(e) {
+document.getElementById("trainTextArea").value = e.target.result;
+};
+reader.readAsText(file, "UTF-8");
+}
+}
+function exportBrainToCppDat() {
+const raw = document.getElementById("trainTextArea").value;
+const lines = raw.split(/\r?\n/).map(function(s) { return s.trim(); }).filter(function(s) { return s.length > 0; });
+let totalBytes = 12;
+lines.forEach(function(s) { totalBytes += 4 + s.length * 2; });
+const buf = new ArrayBuffer(totalBytes);
+const view = new DataView(buf);
+const bytes = new Uint8Array(buf);
+let offset = 0;
+view.setUint32(offset, 0x41494441, true); offset += 4;
+view.setUint32(offset, lines.length, true); offset += 4;
+lines.forEach(function(s) {
+view.setUint32(offset, s.length, true); offset += 4;
+for (let i = 0; i < s.length; i++) {
+view.setUint16(offset, s.charCodeAt(i), true);
+offset += 2;
+}
+});
+view.setUint32(offset, 0, true);
+cryptCppBuffer(bytes);
+const blob = new Blob([bytes], { type: "application/octet-stream" });
+const a = document.createElement("a");
+a.href = URL.createObjectURL(blob);
+a.download = "Ai.dat";
+a.click();
+}
+// ================= 5. ВРЕМЕННЫЕ МЕТКИ И ДВИГАТЕЛЬ ИИ =================
+function getCurrentTimestampStr() {
+  const now = new Date();
+  const pad = function(n) { return String(n).padStart(2, "0"); };
+  return now.getFullYear() + "-" + pad(now.getMonth() + 1) + "-" + pad(now.getDate()) + " " +
+         pad(now.getHours()) + ":" + pad(now.getMinutes()) + ":" + pad(now.getSeconds());
+}
+
+function formatMessageTimeForUI(rawTs) {
+  if (!rawTs || rawTs.length < 19) return rawTs ? "[" + rawTs + "] " : "";
+  const parts = rawTs.split(" ");
+  const datePart = parts.at(0);
+  const timePart = parts.at(1);
+  const dArr = datePart.split("-").map(Number);
+  const y = dArr.at(0);
+  const m = dArr.at(1);
+  const d = dArr.at(2);
+
+  const now = new Date();
+  if (now.getFullYear() === y && (now.getMonth() + 1) === m && now.getDate() === d) {
+    return "[" + timePart + "] ";
+  }
+
+  const msgDate = new Date(y, m - 1, d);
+  const daysRu = ["Вс", "Пн", "Вт", "Ср", "Чт", "Пт", "Сб"];
+  const daysEn = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  const dayName = (g_langIndex === 0) ? daysRu.at(msgDate.getDay()) : daysEn.at(msgDate.getDay());
+  const pad = function(n) { return String(n).padStart(2, "0"); };
+  return "[" + dayName + ", " + pad(d) + "." + pad(m) + "." + y + " " + timePart + "] ";
+}
+
+function trySolveMath(text) {
+  const cleaned = text.replace(/[^0-9+\-*/().]/g, "");
+  if (cleaned.length < 3 || !/[+\-*/]/.test(cleaned) || !/\d/.test(cleaned)) return null;
+  try {
+    const val = Function('"use strict"; return (' + cleaned + ')')();
+    if (typeof val === "number" && isFinite(val)) return val;
+  } catch (e) {}
+  return null;
+}
+
+function generateAIResponse(userInput, binaryVisionReport) {
+  if (binaryVisionReport) return binaryVisionReport;
+
+  const lowRaw = userInput.toLowerCase().trim();
+  const cleanCmd = lowRaw.replace(/[^a-zа-яё0-9/一-龥ぁ-ゔァ-ヴー]/gi, "");
+
+  if (["помощь", "справка", "help", "/help", "hilfe", "ayuda", "aide", "допомога", "帮助", "ヘルプ"].indexOf(cleanCmd) !== -1) {
+    if (g_langIndex === 0) {
+      return "📖 ИНСТРУКЦИЯ ПО MINI AI STUDIO 10.0 (WEB & COOKIES):\n" +
+             "• Cookies и Почта: Сессия, язык и тема оформления сохраняются в Cookies и хранилище, а чаты привязаны к почте.\n" +
+             "• Совместимость с C++ (Ai.dat): В окне «Обучить ИИ» можно загружать и расшифровывать файлы Ai.dat из C++ программы, а также сохранять базу обратно в Ai.dat.\n" +
+             "• Чаты (ПКМ): Нажмите правой кнопкой мыши по чату слева, чтобы переименовать или удалить его.\n" +
+             "• Команда clear: Напишите clear в чат, чтобы мгновенно очистить историю текущего диалога.\n" +
+             "• Скриншоты (Ctrl+V): Вставьте скриншот из буфера (Ctrl+V) или загрузите фото (до 25 МБ) для разбора на карту 0 и 1.";
+    }
+    return "📖 MINI AI STUDIO 10.0 (WEB & COOKIES) GUIDE:\n" +
+           "• Cookies & Email: Session, language, and theme are saved in Cookies & storage; chats are bound to your Email.\n" +
+           "• C++ Ai.dat Support: Load & decrypt C++ Ai.dat files or export back to Ai.dat inside 'Train AI'.\n" +
+           "• Chats (Right-Click): Right-click any chat on the left to Rename or Delete it.\n" +
+           "• Clear command: Type 'clear' to wipe current chat history.\n" +
+           "• Screenshots (Ctrl+V): Paste from clipboard (Ctrl+V) or upload an image (up to 25 MB) for 0/1 pixel analysis.";
+  }
+
+  const mathRes = trySolveMath(userInput);
+  if (mathRes !== null) {
+    return (g_langIndex === 0 ? "Точный расчёт: " : "Exact calculation: ") + mathRes;
+  }
+
+  const normalize = function(s) {
+    return s.toLowerCase().replace(/[^a-zа-яё0-9\s]/gi, "").trim().replace(/\s+/g, " ");
+  };
+  const cleanInput = normalize(userInput);
+  const inputWords = cleanInput.split(" ").filter(Boolean);
+
+  let bestScore = 0;
+  let bestReplies = [];
+  const kb = g_user.knowledge || [];
+
+  for (let i = 0; i < kb.length; i += 2) {
+    const trigger = kb.at(i);
+    const reply = (i + 1 < kb.length) ? kb.at(i + 1) : trigger;
+    const cleanTrig = normalize(trigger);
+
+    let score = 0;
+    if (cleanInput && cleanInput === cleanTrig) {
+      score = 1000;
+    } else {
+      const trigWords = cleanTrig.split(" ").filter(Boolean);
+      inputWords.forEach(function(iw) {
+        trigWords.forEach(function(tw) {
+          if (iw === tw) score += iw.length * 10;
+          else if (iw.length >= 4 && tw.indexOf(iw.slice(0, -1)) === 0) score += iw.length * 4;
+        });
+      });
+    }
+
+    if (score > 0) {
+      if (score > bestScore) {
+        bestScore = score;
+        bestReplies = [reply];
+      } else if (score === bestScore) {
+        bestReplies.push(reply);
+      }
+    }
+  }
+
+  if (bestReplies.length > 0) {
+    const rndIdx = Math.floor(Math.random() * bestReplies.length);
+    return bestReplies.at(rndIdx);
+  }
+
+  return g_langIndex === 0
+    ? "В текущей базе знаний пока нет ответа на эту фразу. Нажмите «Обучить ИИ» сверху (1-я строка — вопрос, 2-я строка — ответ)!"
+    : "No exact match in knowledge base yet. Click 'Train AI' above (line 1 = prompt, line 2 = reply)!";
+}
+
+// ================= 6. ЧАТЫ, ПКМ, CLEAR И СКРИНШОТЫ =================
+function refreshChatUI() {
+  const listBox = document.getElementById("chatListBox");
+  listBox.innerHTML = "";
+
+  g_user.chats.forEach(function(c, idx) {
+    const item = document.createElement("div");
+    item.className = "chat-item" + (idx === g_currentChatIdx ? " active" : "");
+    item.textContent = c.title;
+    item.onclick = function() {
+      g_currentChatIdx = idx;
+      refreshChatUI();
+    };
+    item.oncontextmenu = function(e) {
+      e.preventDefault();
+      g_contextChatIdx = idx;
+      g_currentChatIdx = idx;
+      refreshChatUI();
+
+      const menu = document.getElementById("chatContextMenu");
+      menu.style.left = e.clientX + "px";
+      menu.style.top = e.clientY + "px";
+      menu.classList.remove("hidden");
+    };
+    listBox.appendChild(item);
+  });
+
+  const histBox = document.getElementById("chatHistoryBox");
+  const curChat = g_user.chats.at(g_currentChatIdx);
+  if (!curChat) {
+    histBox.textContent = "";
+    return;
+  }
+
+  let output = "";
+  if (curChat.description) {
+    output += "[" + curChat.description + "]\n----------------------------------------\n\n";
+  }
+  curChat.messages.forEach(function(m) {
+    output += formatMessageTimeForUI(m.timestamp);
+    output += m.isUser ? (g_user.username + ": ") : "AI: ";
+    if (m.imageFile) output += "[Image: " + m.imageFile + "] ";
+    output += m.text + "\n\n";
+  });
+  histBox.textContent = output;
+  histBox.scrollTop = histBox.scrollHeight;
+}
+
+document.addEventListener("click", function() {
+  document.getElementById("chatContextMenu").classList.add("hidden");
+});
+
+function openNewChatModal() {
+  g_chatEditMode = "create";
+  document.getElementById("chatEditModalTitle").textContent = "Новый чат";
+  document.getElementById("chatTitleInput").value = "Chat #" + (g_user.chats.length + 1);
+  document.getElementById("chatDescInput").value = "";
+  document.getElementById("chatEditModal").classList.remove("hidden");
+}
+
+function contextRenameChat() {
+  const target = g_user.chats.at(g_contextChatIdx);
+  if (g_contextChatIdx < 0 || !target) return;
+  g_chatEditMode = "rename";
+  document.getElementById("chatEditModalTitle").textContent = "Переименовать чат";
+  document.getElementById("chatTitleInput").value = target.title;
+  document.getElementById("chatDescInput").value = target.description || "";
+  document.getElementById("chatEditModal").classList.remove("hidden");
+}
+
+function contextDeleteChat() {
+  const target = g_user.chats.at(g_contextChatIdx);
+  if (g_contextChatIdx < 0 || !target) return;
+  if (confirm("Удалить выбранный чат «" + target.title + "»?")) {
+    g_user.chats.splice(g_contextChatIdx, 1);
+    if (g_currentChatIdx >= g_user.chats.length) g_currentChatIdx = g_user.chats.length - 1;
+    saveCurrentUserToStorage();
+    refreshChatUI();
+  }
+}
+
+function confirmChatEditModal() {
+  const title = document.getElementById("chatTitleInput").value.trim() || "Chat";
+  const desc = document.getElementById("chatDescInput").value.trim();
+
+  if (g_chatEditMode === "create") {
+    g_user.chats.push({
+      id: "chat_" + Date.now(),
+      title: title,
+      description: desc,
+      messages: [{ isUser: false, text: "Новый диалог готов!", imageFile: "", timestamp: getCurrentTimestampStr() }]
+    });
+    g_currentChatIdx = g_user.chats.length - 1;
+  } else if (g_chatEditMode === "rename") {
+    const target = g_user.chats.at(g_contextChatIdx);
+    if (target) {
+      target.title = title;
+      target.description = desc;
+    }
+  }
+
+  saveCurrentUserToStorage();
+  refreshChatUI();
+  closeModal("chatEditModal");
+}
+
+function handleMsgKeyDown(e) {
+  if (e.key === "Enter" && !e.shiftKey) {
+    e.preventDefault();
+    sendMessage();
+  }
+}
+
+function sendMessage() {
+  const inp = document.getElementById("msgInput");
+  const userMsg = inp.value;
+  if (!userMsg.trim()) return;
+  inp.value = "";
+
+  const lowCmd = userMsg.trim().toLowerCase();
+  if (lowCmd === "clear" || lowCmd === "/clear") {
+    const cur = g_user.chats.at(g_currentChatIdx);
+    if (cur) {
+      cur.messages = [];
+      saveCurrentUserToStorage();
+      refreshChatUI();
+    }
+    return;
+  }
+
+  if (!g_user.chats.at(g_currentChatIdx)) {
+    g_user.chats.push({ id: "chat_" + Date.now(), title: "Основной диалог", description: "", messages: [] });
+    g_currentChatIdx = 0;
+  }
+
+  const activeChat = g_user.chats.at(g_currentChatIdx);
+  activeChat.messages.push({
+    isUser: true,
+    text: userMsg,
+    imageFile: "",
+    timestamp: getCurrentTimestampStr()
+  });
+
+  const aiReply = generateAIResponse(userMsg, "");
+  activeChat.messages.push({
+    isUser: false,
+    text: aiReply,
+    imageFile: "",
+    timestamp: getCurrentTimestampStr()
+  });
+
+  saveCurrentUserToStorage();
+  refreshChatUI();
+}
+function processImageBlobOrFile(file, sourceNote) {
+if (!file) return;
+if (file.size > 25 * 1024 * 1024) {
+alert("Ошибка: размер файла превышает 25 МБ!");
+return;
+}
+const reader = new FileReader();
+reader.onload = function(ev) {
+const img = new Image();
+img.onload = function() {
+const gridW = 24, gridH = 12;
+const canvas = document.createElement("canvas");
+canvas.width = gridW;
+canvas.height = gridH;
+const ctx = canvas.getContext("2d");
+ctx.drawImage(img, 0, 0, gridW, gridH);
+const pixels = ctx.getImageData(0, 0, gridW, gridH).data;
+let matrixStr = "";
+let ones = 0;
+for (let y = 0; y < gridH; y++) {
+for (let x = 0; x < gridW; x++) {
+const idx = (y * gridW + x) * 4;
+const r = pixels.at(idx);
+const g = pixels.at(idx + 1);
+const b = pixels.at(idx + 2);
+const a = pixels.at(idx + 3);
+let lum = 0.299 * r + 0.587 * g + 0.114 * b;
+if (a < 128) lum = 255;
+if (lum < 128) { matrixStr += "1"; ones++; }
+else { matrixStr += "0"; }
+}
+matrixStr += "\n";
+}
+const darkPct = Math.round((ones * 100) / (gridW * gridH));
+const lightPct = 100 - darkPct;
+const fileName = file.name || "clipboard_screenshot.png";
+const report = "Изучил изображение «" + fileName + "» (" + img.width + "x" + img.height + " пикс.).\n" +
+"Баланс пикселей: тёмных (1) — " + darkPct + "%, светлых (0) — " + lightPct + "%.\n" +
+"Бинарная карта пикселей (0 и 1):\n" + matrixStr;
+if (!g_user.chats.at(g_currentChatIdx)) {
+g_user.chats.push({ id: "chat_" + Date.now(), title: "Скриншоты", description: "", messages: [] });
+g_currentChatIdx = 0;
+}
+const activeChat = g_user.chats.at(g_currentChatIdx);
+activeChat.messages.push({
+isUser: true,
+text: sourceNote || "(Изображение прикреплено)",
+imageFile: fileName,
+timestamp: getCurrentTimestampStr()
+});
+activeChat.messages.push({
+isUser: false,
+text: report,
+imageFile: "",
+timestamp: getCurrentTimestampStr()
+});
+saveCurrentUserToStorage();
+refreshChatUI();
+};
+img.src = ev.target.result;
+};
+reader.readAsDataURL(file);
+}
+function handleSelectedImage(files) {
+if (files && files.length > 0) {
+processImageBlobOrFile(files.item(0), "(Скриншот прикреплён)");
+}
+}
+document.addEventListener("paste", function(e) {
+if (!g_user) return;
+const cd = e.clipboardData || (e.originalEvent && e.originalEvent.clipboardData);
+if (!cd || !cd.items) return;
+for (let i = 0; i < cd.items.length; i++) {
+const item = cd.items.item(i);
+if (item && item.type.indexOf("image/") === 0) {
+processImageBlobOrFile(item.getAsFile(), "(Скриншот из буфера Ctrl+V)");
+break;
+}
+}
+});
+// ================= 7. ПРОФИЛЬ, ОБУЧЕНИЕ, ПОИСК И ИНИЦИАЛИЗАЦИЯ =================
+function openProfileModal() {
+document.getElementById("profNameInput").value = g_user.username;
+document.getElementById("profPassInput").value = g_user.password || "";
+document.getElementById("profDescInput").value = g_user.description || "";
+g_tempAvatarDataUrl = g_user.avatarDataUrl || "";
+updateProfAvatarPreview();
+toggleProfResetBtn();
+document.getElementById("profileModal").classList.remove("hidden");
+}
+function updateProfAvatarPreview() {
+  const prev = document.getElementById("profAvatarPreview");
+  const delBtn = document.getElementById("btnProfRemoveAvatar");
+  if (g_tempAvatarDataUrl) {
+    prev.innerHTML = "";
+    const imgEl = document.createElement("img");
+    imgEl.src = g_tempAvatarDataUrl;
+    imgEl.style.width = "100%";
+    imgEl.style.height = "100%";
+    imgEl.style.objectFit = "cover";
+    imgEl.style.display = "block";
+    prev.appendChild(imgEl);
+    delBtn.disabled = false;
+  } else {
+    prev.innerHTML = DEFAULT_WIN8_AVATAR_SVG;
+    delBtn.disabled = true;
+  }
+}
+
+function toggleProfResetBtn() {
+  const hasPass = document.getElementById("profPassInput").value.length > 0;
+  document.getElementById("btnProfResetPass").disabled = !hasPass;
+}
+
+function resetProfilePasswordWithWarning() {
+  if (confirm("Warning: Вы действительно хотите сбросить и удалить пароль этого профиля?")) {
+    document.getElementById("profPassInput").value = "";
+    toggleProfResetBtn();
+  }
+}
+
+function handleAvatarUpload(files) {
+  if (!files || files.length === 0) return;
+  const file = files.item(0);
+  const fName = file.name.toLowerCase();
+
+  // GIF, ICO и любые файлы до 400 КБ вставляем напрямую без сжатия
+  if (file.type === "image/gif" || fName.endsWith(".ico") || file.size < 400 * 1024) {
+    if (file.size > 3.5 * 1024 * 1024) {
+      alert("Файл слишком большой для сохранения в браузере (максимум 3.5 МБ)!");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      g_tempAvatarDataUrl = e.target.result;
+      updateProfAvatarPreview();
+    };
+    reader.readAsDataURL(file);
+    return;
+  }
+
+  // Крупные PNG, JPG, WEBP сжимаем до 256x256
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const img = new Image();
+    img.onload = function() {
+      const canvas = document.createElement("canvas");
+      canvas.width = 256;
+      canvas.height = 256;
+      const ctx = canvas.getContext("2d");
+      ctx.drawImage(img, 0, 0, 256, 256);
+      g_tempAvatarDataUrl = canvas.toDataURL("image/png");
+      updateProfAvatarPreview();
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function saveProfileChanges() {
+  const newName = document.getElementById("profNameInput").value.trim();
+  if (!newName) return;
+  g_user.username = newName;
+  g_user.password = document.getElementById("profPassInput").value;
+  g_user.description = document.getElementById("profDescInput").value;
+  g_user.avatarDataUrl = g_tempAvatarDataUrl;
+
+  try {
+    saveCurrentUserToStorage();
+  } catch (err) {
+    alert("Файл аватарки слишком тяжёлый для памяти браузера! Выберите картинку поменьше.");
+    g_user.avatarDataUrl = "";
+  }
+
+  updateHeaderProfileUI();
+  refreshChatUI();
+  closeModal("profileModal");
+}
+
+function switchUserFromProfile() {
+closeModal("profileModal");
+deleteCookie("miniai_active_email");
+localStorage.removeItem("MiniAI_LastEmail");
+g_user = null;
+g_currentEmail = "";
+document.getElementById("appHeader").classList.add("hidden");
+document.getElementById("appWorkspace").classList.add("hidden");
+document.getElementById("authPass").value = "";
+document.getElementById("btnForgotPass").classList.add("hidden");
+refreshSavedAccountsDropdown();
+document.getElementById("authModal").classList.remove("hidden");
+}
+function deleteCurrentAccount() {
+if (confirm("Warning: Удалить текущий профиль и все его чаты навсегда?")) {
+if (!g_user.isGuest) localStorage.removeItem(getStorageKey(g_currentEmail));
+switchUserFromProfile();
+}
+}
+function openTrainModal() {
+document.getElementById("trainTextArea").value = (g_user.knowledge || []).join("\n");
+document.getElementById("trainModal").classList.remove("hidden");
+}
+function saveTrainingData() {
+const raw = document.getElementById("trainTextArea").value;
+g_user.knowledge = raw.split(/\r?\n/).map(function(s) { return s.trim(); }).filter(function(s) { return s.length > 0; });
+saveCurrentUserToStorage();
+closeModal("trainModal");
+}
+function exportAccountBackup() {
+const blob = new Blob([JSON.stringify(g_user, null, 2)], { type: "application/json" });
+const a = document.createElement("a");
+a.href = URL.createObjectURL(blob);
+a.download = g_user.email + "_MiniAI_Backup.json";
+a.click();
+}
+function importAccountBackup(files) {
+if (!files || files.length === 0) return;
+const reader = new FileReader();
+reader.onload = function(e) {
+try {
+const imported = JSON.parse(e.target.result);
+if (imported && imported.email && Array.isArray(imported.chats)) {
+imported.isGuest = false;
+localStorage.setItem(getStorageKey(imported.email), JSON.stringify(imported));
+completeLogin(imported);
+alert("Профиль «" + imported.email + "» успешно импортирован!");
+} else {
+alert("Некорректный файл резервной копии!");
+}
+} catch (err) {
+alert("Ошибка чтения файла!");
+}
+};
+reader.readAsText(files.item(0), "UTF-8");
+}
+function executeChatSearch() {
+const q = document.getElementById("findQueryInput").value.trim();
+const info = document.getElementById("findResultInfo");
+if (!q) return;
+const text = document.getElementById("chatHistoryBox").textContent;
+const matches = text.toLowerCase().split(q.toLowerCase()).length - 1;
+info.textContent = matches > 0 ? ("Найдено совпадений: " + matches) : "Совпадений не найдено.";
+if (matches > 0 && window.find) window.find(q);
+}
+document.addEventListener("keydown", function(e) {
+if (e.ctrlKey && e.key.toLowerCase() === "f" && g_user) {
+e.preventDefault();
+document.getElementById("findModal").classList.remove("hidden");
+document.getElementById("findQueryInput").focus();
+}
+});
+function closeModal(id) {
+document.getElementById(id).classList.add("hidden");
+}
+window.addEventListener("DOMContentLoaded", function() {
+let savedLang = getCookie("miniai_lang");
+let savedTheme = getCookie("miniai_theme");
+let savedCol = getCookie("miniai_custom_color");
+if (savedTheme === "") {
+try {
+const lsSet = JSON.parse(localStorage.getItem("MiniAI_Settings") || "{}");
+if (lsSet.lang !== undefined) savedLang = String(lsSet.lang);
+if (lsSet.theme !== undefined) savedTheme = String(lsSet.theme);
+if (lsSet.color !== undefined) savedCol = lsSet.color;
+} catch (e) {}
+}
+if (savedLang !== "") g_langIndex = parseInt(savedLang, 10) || 0;
+if (savedTheme !== "") g_themeMode = parseInt(savedTheme, 10) || 0;
+if (savedCol !== "") g_customColor = savedCol;
+applyThemeAndLangToUI();
+refreshSavedAccountsDropdown();
+const activeEmailCookie = getCookie("miniai_active_email") || localStorage.getItem("MiniAI_LastEmail") || "";
+if (activeEmailCookie) {
+const raw = localStorage.getItem(getStorageKey(activeEmailCookie));
+if (raw) {
+try {
+const parsed = JSON.parse(raw);
+if (!parsed.password) {
+completeLogin(parsed);
+return;
+} else {
+document.getElementById("authEmail").value = activeEmailCookie;
+}
+} catch (e) {}
+}
+}
+});
+</script>
+</body>
+</html>
